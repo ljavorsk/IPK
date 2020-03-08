@@ -19,6 +19,13 @@ def isItUrl(url):
     else:
         return False
 
+def isItIP(ip):
+    regex_ip = r'^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+    if (re.match(regex_ip, ip) is not None):
+        return True
+    else:
+        return False
+
 class MyTCPHandler(socketserver.BaseRequestHandler):
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -56,16 +63,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                             except:
                                 not_found = True
                         elif (typeOfReq == 'PTR'):
-
-                            try:
-                                socket.inet_aton(hostname)      # Is it real IP adress?
+                            if(not isItIP(hostname)):       # Is it real IP adress?
+                                bad_request = True
+                            else:
                                 try:
                                     url = socket.gethostbyaddr(hostname)
                                     body = (hostname + ":" + typeOfReq + "=" + url[0] + "\n")
                                 except:
                                     not_found = True
-                            except socket.error:
-                                bad_request = True
                         else:
                             bad_request = True
                 except:
@@ -116,7 +121,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                                     i += 1
                                     continue
                             elif (typeOfReq == 'PTR'):
-                                try:
+                                if(not isItIP(hostname)):       # Is it real IP adress?
+                                    bad_type = True
+                                    i += 1
+                                    continue
+                                else:
                                     socket.inet_aton(hostname)      # Is the input real IP adress?
                                     try:
                                         url = socket.gethostbyaddr(hostname)
@@ -126,10 +135,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                                         not_found = True
                                         i += 1
                                         continue
-                                except socket.error:
-                                    bad_type = True
-                                    i += 1
-                                    continue
                             else:           # Nor A or PTR type
                                 bad_type = True
                                 i += 1

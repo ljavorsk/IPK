@@ -1,6 +1,6 @@
 ## HTTP Resolver
 ### About
-This server results the TCP/IP request from client writen in Python.
+This server results the TCP/IP request from client writen in Python.  
 You need to have `python3` installed for this server.    
 There are only two types of methods that are allowed:  
 `POST` and `GET`
@@ -19,7 +19,7 @@ Any other request is marked as Bad Request.
 ### Responses
 Server does reply with various of responses.  
 These are the headers of possible replies:  
-`200 OK` = The translate was successful
+`200 OK` = The translate was successful  
 `400 Bad Request` = There is some sort of problem in request  
 `404 Not Found` = The IP or Domain name couldn't be found  
 `500 Internal Error` = Something went wrong on the server side  

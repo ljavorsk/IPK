@@ -160,14 +160,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 if __name__ == "__main__":
     if (len(sys.argv) != 2):
        sys.exit("You need to define PORT you want the server listen to\n")
-
-    UINT16_MAX_LIMIT = "65535"
-    UINT16_MIN_LIMIT = "0"
-    if ( sys.argv[1] > UINT16_MAX_LIMIT or sys.argv[1] < UINT16_MIN_LIMIT):
-       sys.exit("Invalid PORT number\n")
-
+       
     HOST = '127.0.0.1'  # (localhost)
     PORT = int(sys.argv[1])    # Port defined by user
-
-    server = socketserver.TCPServer((HOST, PORT), MyTCPHandler)
+    try:
+        server = socketserver.TCPServer((HOST, PORT), MyTCPHandler)
+    except:
+        sys.exit("Port cannot be connected\n")
     server.serve_forever()

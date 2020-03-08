@@ -14,11 +14,7 @@ def signal_handler(sig, frame):
 
 def isItUrl(url):
     regex_dom_nam = r'(([\da-zA-Z])([_\w-]{,62})\.){,127}(([\da-zA-Z])[_\w-]{,61})?([\da-zA-Z]\.((xn\-\-[a-zA-Z\d]+)|([a-zA-Z\d]{2,})))'
-    regex_ip = '''^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
-            25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
-            25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
-            25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)'''
-    if ((re.match(regex_dom_nam, url) is not None) and (re.match(regex_ip, url) is None)):
+    if (re.match(regex_dom_nam, url) is not None):
         return True
     else:
         return False
@@ -54,6 +50,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         if (typeOfReq == 'A' and isItUrl(hostname)):        # Type is A and the input is valid url
                             try:
                                 ip = socket.gethostbyname(hostname)
+                                if (ip == hostname):
+                                        bad_request = True
                                 body = (hostname + ":" + typeOfReq + "=" + ip + "\n")
                             except:
                                 not_found = True
@@ -80,7 +78,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                     else:
                         result = header + ErrNotFound
                 else:
-                    result = header + Success + content_type + end_of_header + body
+                    content_length = ("Content-lenght: " + str(len(body.encode())))
+                    result = header + Success + content_type + content_length + end_of_header + body
                 self.encodeAndSend(result)
 
         elif (data_array[0] == 'POST'):             # POST
@@ -91,7 +90,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 try:
                     body_of_request = decData.split("\r\n\r\n")[1]
                     body_of_request = body_of_request.splitlines()
-                    initial_result = result = header + Success + content_type + end_of_header    # First the result have only header 200 OK
+                    result = header + Success + content_type   # First the result have only header 200 OK
+                    initial_body = body = ""
                     bad_type = empty_line = not_found = False        # Bad type of request and not found flag
                     i = 0
                     while i < len(body_of_request):
@@ -105,8 +105,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                             if (typeOfReq == 'A' and isItUrl(hostname)):
                                 try:
                                     ip = socket.gethostbyname(hostname)
-                                    body = (hostname + ":" + typeOfReq + "=" + ip + "\n")
-                                    result += body
+                                    if (ip == hostname):
+                                        bad_type = True
+                                        i += 1
+                                        continue
+                                    body += (hostname + ":" + typeOfReq + "=" + ip + "\n")
+                                    #result += body
                                 except:
                                     not_found = True
                                     i += 1
@@ -116,8 +120,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                                     socket.inet_aton(hostname)      # Is the input real IP adress?
                                     try:
                                         url = socket.gethostbyaddr(hostname)
-                                        body = (hostname + ":" + typeOfReq + "=" + url[0] + "\n")
-                                        result += body
+                                        body += (hostname + ":" + typeOfReq + "=" + url[0] + "\n")
+                                        #result += body
                                     except:
                                         not_found = True
                                         i += 1
@@ -131,13 +135,15 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                                 i += 1
                                 continue
                         i += 1
-                    if (empty_line or initial_result == result):      # Nothing was appended or empty line
+                    if (empty_line or initial_body == body):      # Nothing was appended or empty line
                         if (not_found == True and bad_type != True and empty_line != True):     # Wasn't found
                             result = header + ErrNotFound
                         else:               # Empty line or bad type of request
                             result = header + ErrBadRequest
                         self.encodeAndSend(result)
-                    else:
+                    else:       # Everything is valid
+                        content_length = ("Content-lenght: " + str(len(body.encode())))
+                        result += content_length + end_of_header + body
                         self.encodeAndSend(result)
                 except:
                     result = header + ErrBadRequest

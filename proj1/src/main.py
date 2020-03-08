@@ -13,12 +13,15 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def isItUrl(url):
-    regex = r'(([\da-zA-Z])([_\w-]{,62})\.){,127}(([\da-zA-Z])[_\w-]{,61})?([\da-zA-Z]\.((xn\-\-[a-zA-Z\d]+)|([a-zA-Z\d]{2,})))'
-    
-
-    print(re.match(regex, "http://www.example.com") is not None) # True
-    print(re.match(regex, "example.com") is not None)            # False
-    print(re.match(regex, url) is not None)
+    regex_dom_nam = r'(([\da-zA-Z])([_\w-]{,62})\.){,127}(([\da-zA-Z])[_\w-]{,61})?([\da-zA-Z]\.((xn\-\-[a-zA-Z\d]+)|([a-zA-Z\d]{2,})))'
+    regex_ip = '''^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
+            25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
+            25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
+            25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)'''
+    if ((re.match(regex_dom_nam, url) is not None) and (re.match(regex_ip, url) is None)):
+        return True
+    else:
+        return False
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
     signal.signal(signal.SIGINT, signal_handler)
@@ -48,7 +51,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                     else:
                         hostname = (query[0][1]).replace("\\","")
                         typeOfReq = query[1][1]
-                        if (typeOfReq == 'A'):
+                        if (typeOfReq == 'A' and isItUrl(hostname)):        # Type is A and the input is valid url
                             try:
                                 ip = socket.gethostbyname(hostname)
                                 body = (hostname + ":" + typeOfReq + "=" + ip + "\n")
@@ -99,8 +102,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         else:
                             typeOfReq = body_of_request[i].split(':')[1]
                             hostname = body_of_request[i].split(':')[0]
-                            if (typeOfReq == 'A'):
-                                isItUrl(hostname)
+                            if (typeOfReq == 'A' and isItUrl(hostname)):
                                 try:
                                     ip = socket.gethostbyname(hostname)
                                     body = (hostname + ":" + typeOfReq + "=" + ip + "\n")
